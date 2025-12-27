@@ -104,20 +104,36 @@ class _ProductDetailViewState extends State<ProductDetailView> {
                     ],
                   ),
                 ),
+                leading: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black.withOpacity(0.4),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
                 actions: [
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () async {
-                      // Wait for the result from the Form Page
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (c) => ProductFormView(product: product),
-                        ),
-                      );
-                      // When user comes back, RE-READ the database
-                      _refreshProduct();
-                    },
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black.withOpacity(0.4),
+                      child: IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.white),
+                        onPressed: () async {
+                          // Wait for the result from the Form Page
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (c) => ProductFormView(product: product),
+                            ),
+                          );
+                          // When user comes back, RE-READ the database
+                          _refreshProduct();
+                        },
+                      ),
+                    ),
                   ),
                 ],
               ),

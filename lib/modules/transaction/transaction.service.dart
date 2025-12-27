@@ -1,4 +1,3 @@
-import 'package:sqflite/sqflite.dart' as sql;
 import '../../core/database/database.service.dart';
 import '../../core/database/scripts/transaction_table.dart';
 import '../../core/database/scripts/transaction_item_table.dart';
