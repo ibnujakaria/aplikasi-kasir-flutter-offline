@@ -53,4 +53,89 @@ class ProductService {
     final db = await _dbService.database;
     return await db.query('product_category');
   }
+
+  Future<int> saveProduct(Product product) async {
+    final db = await _dbService.database;
+
+    if (product.id == null) {
+      // CREATE
+      return await db.insert('product', {
+        'category_id': product.categoryId,
+        'name': product.name,
+        'price': product.price,
+        'description': product.description,
+      });
+    } else {
+      // UPDATE
+      return await db.update(
+        'product',
+        {
+          'category_id': product.categoryId,
+          'name': product.name,
+          'price': product.price,
+          'description': product.description,
+        },
+        where: 'id = ?',
+        whereArgs: [product.id],
+      );
+    }
+  }
+
+  Future<void> saveProductImages(
+    int productId,
+    List<ProductImage> images,
+  ) async {
+    final db = await _dbService.database;
+
+    // Simple sync: Delete existing and re-insert current list
+    await db.delete(
+      'product_image',
+      where: 'product_id = ?',
+      whereArgs: [productId],
+    );
+
+    for (var img in images) {
+      await db.insert('product_image', {
+        'product_id': productId,
+        'path': img.path,
+        'is_thumbnail': img.isThumbnail ? 1 : 0,
+      });
+    }
+  }
+
+  Future<Product?> getProductById(int id) async {
+    final db = await _dbService.database;
+
+    // 1. Fetch product data
+    final List<Map<String, dynamic>> maps = await db.rawQuery(
+      '''
+    SELECT p.*, pc.name as category_name
+    FROM product p
+    LEFT JOIN product_category pc ON p.category_id = pc.id
+    WHERE p.id = ?
+  ''',
+      [id],
+    );
+
+    if (maps.isEmpty) return null;
+
+    // 2. Fetch images for this specific product
+    final List<Map<String, dynamic>> imageMaps = await db.query(
+      'product_image',
+      where: 'product_id = ?',
+      whereArgs: [id],
+    );
+
+    List<ProductImage> images = imageMaps
+        .map(
+          (img) => ProductImage(
+            productId: id,
+            path: img['path'],
+            isThumbnail: img['is_thumbnail'] == 1,
+          ),
+        )
+        .toList();
+
+    return Product.fromMap(maps.first, images: images);
+  }
 }

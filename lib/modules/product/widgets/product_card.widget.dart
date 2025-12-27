@@ -19,7 +19,9 @@ class ProductCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductDetailView(product: product),
+            builder: (context) => product.id != null
+                ? ProductDetailView(productId: product.id!)
+                : const Center(child: Text('Product ID is null')),
           ),
         );
       },

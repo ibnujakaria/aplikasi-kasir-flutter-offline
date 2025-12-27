@@ -1,3 +1,4 @@
+import 'package:aplikasi_kasir/modules/product/product_form.view.dart';
 import 'package:flutter/material.dart';
 import 'product.service.dart';
 import 'models/product.model.dart';
@@ -99,6 +100,23 @@ class _ProductListViewState extends State<ProductListView> {
               ],
             ),
           ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          // Navigate to the form in "Create" mode (product is null)
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProductFormView()),
+          );
+          // Refresh the grid when the user comes back after saving
+          setState(() {});
+        },
+        backgroundColor: Colors.orange, // Match your theme
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          "Tambah Produk",
+          style: TextStyle(color: Colors.white),
         ),
       ),
       body: FutureBuilder<List<Product>>(

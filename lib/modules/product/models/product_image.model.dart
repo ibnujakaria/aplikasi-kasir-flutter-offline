@@ -2,7 +2,7 @@ class ProductImage {
   final int? id;
   final int productId;
   final String path;
-  final bool isThumbnail;
+  bool isThumbnail;
 
   ProductImage({
     this.id,
