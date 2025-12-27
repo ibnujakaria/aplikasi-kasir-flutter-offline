@@ -17,21 +17,21 @@ class ProductCard extends StatelessWidget {
 
     final bool isOutOfStock = product.stock <= 0;
 
+    void goToDetailPage() {
+      if (product.id != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailView(productId: product.id!),
+          ),
+        );
+      }
+    }
+
     return GestureDetector(
       onTap: isOutOfStock
-          ? null // Optional: disable tap completely if out of stock in POS
-          : (onTap ??
-                () {
-                  if (product.id != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProductDetailView(productId: product.id!),
-                      ),
-                    );
-                  }
-                }),
+          ? goToDetailPage // Optional: disable tap completely if out of stock in POS
+          : (onTap ?? goToDetailPage),
       child: Opacity(
         opacity: isOutOfStock ? 0.6 : 1.0,
         child: Card(
