@@ -63,11 +63,22 @@ class _ProductDetailViewState extends State<ProductDetailView> {
                           final path = images.isEmpty
                               ? 'https://via.placeholder.com/400'
                               : images[index].path;
-                          return Hero(
-                            tag: 'product-${product.id}',
-                            child: path.startsWith('http')
-                                ? Image.network(path, fit: BoxFit.cover)
-                                : Image.asset(path, fit: BoxFit.cover),
+                          return ColorFiltered(
+                            colorFilter: product.stock <= 0
+                                ? const ColorFilter.mode(
+                                    Colors.grey,
+                                    BlendMode.saturation,
+                                  )
+                                : const ColorFilter.mode(
+                                    Colors.transparent,
+                                    BlendMode.multiply,
+                                  ),
+                            child: Hero(
+                              tag: 'product-${product.id}',
+                              child: path.startsWith('http')
+                                  ? Image.network(path, fit: BoxFit.cover)
+                                  : Image.asset(path, fit: BoxFit.cover),
+                            ),
                           );
                         },
                       ),
@@ -123,9 +134,44 @@ class _ProductDetailViewState extends State<ProductDetailView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Chip(
-                          label: Text(product.categoryName ?? 'Menu'),
-                          backgroundColor: Colors.orange.withOpacity(0.1),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          spacing: 4,
+                          children: [
+                            Chip(
+                              label: Text(product.categoryName ?? 'Menu'),
+                              backgroundColor: Colors.orange.withOpacity(0.1),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: product.stock > 0
+                                    ? Colors.green.shade50
+                                    : Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: product.stock > 0
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                              ),
+                              child: Text(
+                                product.stock > 0
+                                    ? 'Stok: ${product.stock}'
+                                    : 'Stok Habis',
+                                style: TextStyle(
+                                  color: product.stock > 0
+                                      ? Colors.green.shade700
+                                      : Colors.red.shade700,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         Text(

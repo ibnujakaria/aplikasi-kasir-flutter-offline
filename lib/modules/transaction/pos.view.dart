@@ -37,15 +37,21 @@ class _PosViewState extends State<PosView> {
   // --- LOGIC ---
 
   void _addToCart(Product product) {
-    setState(() {
-      int id = product.id!;
-      if (_cart.containsKey(id)) {
-        _cart[id] = _cart[id]! + 1;
-      } else {
-        _cart[id] = 1;
+    int currentQtyInCart = _cart[product.id] ?? 0;
+
+    // Check if we still have stock
+    if (currentQtyInCart < product.stock) {
+      setState(() {
+        int id = product.id!;
+        _cart[id] = currentQtyInCart + 1;
         _cartProducts[id] = product;
-      }
-    });
+      });
+    } else {
+      // Optional: Show a toast or snackbar
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Stok ${product.name} habis!")));
+    }
   }
 
   void _updateQty(int productId, int delta) {
@@ -140,74 +146,80 @@ class _PosViewState extends State<PosView> {
   }
 
   Widget _buildProductGrid() {
-    return FutureBuilder<List<Product>>(
-      future: _productService.getAllProducts(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData)
-          return const Center(child: CircularProgressIndicator());
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate columns: 2 for small screens, 3 for medium, 4+ for wide
+        int crossAxisCount = 2;
+        if (constraints.maxWidth > 600) crossAxisCount = 3;
+        if (constraints.maxWidth > 900) crossAxisCount = 4;
+        if (constraints.maxWidth > 1200) crossAxisCount = 5;
 
-        final products = snapshot.data!.where((p) {
-          final matchesSearch = p.name.toLowerCase().contains(
-            _searchQuery.toLowerCase(),
-          );
-          final matchesCategory =
-              _selectedCategoryId == null ||
-              p.categoryId == _selectedCategoryId;
-          return matchesSearch && matchesCategory;
-        }).toList();
+        return FutureBuilder<List<Product>>(
+          future: _productService.getAllProducts(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-        return GridView.builder(
-          padding: const EdgeInsets.all(10),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            // Adjust this ratio!
-            // 0.8 is taller, 1.0 is a square, 1.2 is wider/shorter.
-            // Try 0.85 or 0.9 for a standard card look.
-            childAspectRatio: 0.85,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-          ),
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final p = products[index];
-            final qty = _cart[p.id] ?? 0;
+            final products = snapshot.data!.where((p) {
+              final matchesSearch = p.name.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              );
+              final matchesCategory =
+                  _selectedCategoryId == null ||
+                  p.categoryId == _selectedCategoryId;
+              return matchesSearch && matchesCategory;
+            }).toList();
 
-            return Stack(
-              // Use fit: StackFit.expand to make the card fill the grid cell
-              // without creating extra invisible space
-              fit: StackFit.expand,
-              children: [
-                ProductCard(product: p, onTap: () => _addToCart(p)),
-                if (qty > 0)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.orange,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black26, blurRadius: 4),
-                        ],
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 28,
-                        minHeight: 28,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$qty',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+            return GridView.builder(
+              padding: const EdgeInsets.all(10),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount, // Use the dynamic count here
+                childAspectRatio: 0.85,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final p = products[index];
+                final qty = _cart[p.id] ?? 0;
+
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ProductCard(product: p, onTap: () => _addToCart(p)),
+                    if (qty > 0)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.orange,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black26, blurRadius: 4),
+                            ],
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$qty',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                );
+              },
             );
           },
         );

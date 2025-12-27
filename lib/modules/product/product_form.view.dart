@@ -19,6 +19,7 @@ class _ProductFormViewState extends State<ProductFormView> {
   // Controllers
   late TextEditingController _nameController;
   late TextEditingController _priceController;
+  late TextEditingController _stockController;
   late TextEditingController _descController;
   late TextEditingController _urlController;
 
@@ -35,6 +36,11 @@ class _ProductFormViewState extends State<ProductFormView> {
       text: widget.product?.price != null
           ? widget.product!.price.toInt().toString()
           : '',
+    );
+    _stockController = TextEditingController(
+      text: widget.product?.stock != null
+          ? widget.product!.stock.toString()
+          : '0',
     );
     _descController = TextEditingController(
       text: widget.product?.description ?? '',
@@ -132,17 +138,39 @@ class _ProductFormViewState extends State<ProductFormView> {
             ),
             const SizedBox(height: 16),
 
-            // 3. PRICE
-            TextFormField(
-              controller: _priceController,
-              decoration: const InputDecoration(
-                labelText: 'Harga Jual',
-                prefixText: 'Rp ',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              validator: (val) => val!.isEmpty ? 'Harga wajib diisi' : null,
+            Row(
+              children: [
+                // PRICE FIELD
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _priceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Harga',
+                      prefixText: 'Rp ',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (val) => val!.isEmpty ? 'Wajib' : null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // STOCK FIELD (NEW)
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _stockController,
+                    decoration: const InputDecoration(
+                      labelText: 'Stok',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (val) => val!.isEmpty ? 'Wajib' : null,
+                  ),
+                ),
+              ],
             ),
+
             const SizedBox(height: 16),
 
             // 4. DESCRIPTION
@@ -254,6 +282,7 @@ class _ProductFormViewState extends State<ProductFormView> {
                       categoryId: _selectedCategoryId,
                       name: _nameController.text,
                       price: double.parse(_priceController.text),
+                      stock: int.parse(_stockController.text),
                       description: _descController.text,
                     ),
                   );

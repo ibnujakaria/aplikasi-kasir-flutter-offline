@@ -63,6 +63,7 @@ class ProductService {
         'category_id': product.categoryId,
         'name': product.name,
         'price': product.price,
+        'stock': product.stock,
         'description': product.description,
       });
     } else {
@@ -73,6 +74,7 @@ class ProductService {
           'category_id': product.categoryId,
           'name': product.name,
           'price': product.price,
+          'stock': product.stock,
           'description': product.description,
         },
         where: 'id = ?',

@@ -7,6 +7,7 @@ class Product {
   final String name;
   final double price;
   final String? description;
+  final int stock;
   final List<ProductImage> images;
 
   Product({
@@ -15,6 +16,7 @@ class Product {
     this.categoryName,
     required this.name,
     required this.price,
+    this.stock = 0,
     this.description,
     this.images = const [],
   });
@@ -29,6 +31,7 @@ class Product {
       categoryName: map['category_name'],
       name: map['name'],
       price: map['price'],
+      stock: map['stock'],
       description: map['description'],
       images: images,
     );
