@@ -8,31 +8,44 @@ class ProductService {
   Future<List<Product>> getAllProducts() async {
     final db = await _dbService.database;
 
-    // We join product_category to get the name of the category
-    // and product_image to get the thumbnail
-    final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT 
-        p.*, 
-        pc.name as category_name,
-        pi.path as thumbnail 
-      FROM product p
-      LEFT JOIN product_category pc ON p.category_id = pc.id
-      LEFT JOIN product_image pi ON p.id = pi.product_id AND pi.is_thumbnail = 1
-    ''');
+    // 1. Fetch all products and their category names
+    final List<Map<String, dynamic>> productMaps = await db.rawQuery('''
+    SELECT 
+      p.*, 
+      pc.name as category_name
+    FROM product p
+    LEFT JOIN product_category pc ON p.category_id = pc.id
+  ''');
 
-    return maps.map((map) {
-      // Create the image object from the joined path
-      final images = map['thumbnail'] != null
-          ? [
-              ProductImage(
-                productId: map['id'],
-                path: map['thumbnail'],
-                isThumbnail: true,
-              ),
-            ]
-          : <ProductImage>[];
+    // 2. Fetch ALL images from the image table
+    final List<Map<String, dynamic>> imageMaps = await db.query(
+      'product_image',
+    );
 
-      return Product.fromMap(map, images: images);
+    // 3. Group images by product_id for quick lookup
+    // Result: { productId: [ProductImage, ProductImage], ... }
+    Map<int, List<ProductImage>> imageGroup = {};
+    for (var imgMap in imageMaps) {
+      int productId = imgMap['product_id'];
+      if (!imageGroup.containsKey(productId)) {
+        imageGroup[productId] = [];
+      }
+      imageGroup[productId]!.add(
+        ProductImage(
+          productId: productId,
+          path: imgMap['path'],
+          isThumbnail: imgMap['is_thumbnail'] == 1,
+        ),
+      );
+    }
+
+    // 4. Map products and attach their specific image list
+    return productMaps.map((map) {
+      int productId = map['id'];
+      return Product.fromMap(
+        map,
+        images: imageGroup[productId] ?? [], // Attach all images found
+      );
     }).toList();
   }
 
