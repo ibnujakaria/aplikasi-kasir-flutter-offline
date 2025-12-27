@@ -2,12 +2,13 @@ import 'package:aplikasi_kasir/core/database/scripts/product_category.dart';
 import 'package:aplikasi_kasir/core/database/scripts/staff_table.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'scripts/staff_table.dart';
 import 'scripts/restaurant_info_table.dart';
 
 import 'scripts/product_table.dart';
 import 'scripts/product_image_table.dart';
 import 'scripts/customer_table.dart';
+import 'scripts/transaction_table.dart';
+import 'scripts/transaction_item_table.dart';
 
 import 'seeders/database.seeder.dart';
 
@@ -49,6 +50,8 @@ class DatabaseService {
       CustomerTable.createTable,
       StaffTable.createTable,
       RestaurantInfoTable.createTable,
+      TransactionTable.createTable,
+      TransactionItemTable.createTable,
     ];
 
     for (var script in scripts) {

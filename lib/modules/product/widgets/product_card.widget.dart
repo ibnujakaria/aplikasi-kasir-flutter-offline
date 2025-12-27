@@ -29,9 +29,7 @@ class ProductCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: isOutOfStock
-          ? goToDetailPage // Optional: disable tap completely if out of stock in POS
-          : (onTap ?? goToDetailPage),
+      onTap: onTap ?? goToDetailPage,
       child: Opacity(
         opacity: isOutOfStock ? 0.6 : 1.0,
         child: Card(

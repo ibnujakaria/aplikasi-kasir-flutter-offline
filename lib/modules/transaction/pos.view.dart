@@ -1,8 +1,13 @@
-import 'package:aplikasi_kasir/core/utils/currency_format.dart';
 import 'package:flutter/material.dart';
+import 'package:aplikasi_kasir/core/utils/currency_format.dart';
 import '../product/product.service.dart';
 import '../product/models/product.model.dart';
 import '../product/widgets/product_card.widget.dart';
+import 'transaction.service.dart';
+import '../staff/staff.service.dart';
+import '../staff/models/staff.model.dart';
+import '../customer/customer.service.dart';
+import '../customer/models/customer.model.dart';
 
 class PosView extends StatefulWidget {
   const PosView({super.key});
@@ -13,6 +18,9 @@ class PosView extends StatefulWidget {
 
 class _PosViewState extends State<PosView> {
   final ProductService _productService = ProductService();
+  final TransactionService _transactionService = TransactionService();
+  final StaffService _staffService = StaffService();
+  final CustomerService _customerService = CustomerService();
 
   // State for Cart
   final Map<int, int> _cart = {}; // {productId: quantity}
@@ -23,15 +31,24 @@ class _PosViewState extends State<PosView> {
   int? _selectedCategoryId;
   List<Map<String, dynamic>> _categories = [];
 
+  // State for Transaction
+  List<Staff> _staffMembers = [];
+  Staff? _selectedStaff;
+  Customer? _selectedCustomer;
+
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    _loadData();
   }
 
-  void _loadCategories() async {
+  void _loadData() async {
     final cats = await _productService.getCategories();
-    setState(() => _categories = cats);
+    final staff = await _staffService.getAllStaff();
+    setState(() {
+      _categories = cats;
+      _staffMembers = staff;
+    });
   }
 
   // --- LOGIC ---
@@ -289,62 +306,195 @@ class _PosViewState extends State<PosView> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    "Detail Pesanan",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Detail Pesanan",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
                   ),
                   const Divider(),
-                  ..._cart.entries.map((entry) {
-                    final product = _cartProducts[entry.key]!;
-                    final qty = entry.value;
-                    return ListTile(
-                      title: Text(product.name),
-                      subtitle: Text("Rp ${product.price.toInt()} x $qty"),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.remove_circle_outline,
-                              color: Colors.red,
-                            ),
-                            onPressed: () {
-                              setSheetState(() => _updateQty(product.id!, -1));
-                              setState(() {}); // Updates main grid badges
-                            },
+
+                  // Cart Items
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 200),
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: _cart.entries.map((entry) {
+                        final product = _cartProducts[entry.key]!;
+                        final qty = entry.value;
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(product.name),
+                          subtitle: Text("Rp ${product.price.toInt()} x $qty"),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.remove_circle_outline,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  setSheetState(
+                                    () => _updateQty(product.id!, -1),
+                                  );
+                                  setState(() {}); // Updates main grid badges
+                                },
+                              ),
+                              Text('$qty'),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.add_circle_outline,
+                                  color: Colors.green,
+                                ),
+                                onPressed: () {
+                                  setSheetState(
+                                    () => _updateQty(product.id!, 1),
+                                  );
+                                  setState(() {});
+                                },
+                              ),
+                            ],
                           ),
-                          Text('$qty'),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.add_circle_outline,
-                              color: Colors.green,
-                            ),
-                            onPressed: () {
-                              setSheetState(() => _updateQty(product.id!, 1));
-                              setState(() {});
-                            },
-                          ),
-                        ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  const Divider(),
+
+                  // Staff Selection
+                  DropdownButtonFormField<Staff>(
+                    decoration: const InputDecoration(
+                      labelText: 'Dilayani oleh (Opsional)',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
                       ),
-                    );
-                  }),
+                    ),
+                    value: _selectedStaff,
+                    items: _staffMembers.map((s) {
+                      return DropdownMenuItem(value: s, child: Text(s.name));
+                    }).toList(),
+                    onChanged: (v) {
+                      setSheetState(() => _selectedStaff = v);
+                      setState(() {}); // Persist to parent state
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Customer Selection
+                  InkWell(
+                    onTap: () async {
+                      final customer = await _showCustomerSearchDialog();
+                      if (customer != null) {
+                        setSheetState(() => _selectedCustomer = customer);
+                        setState(() {});
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Pelanggan',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.person_search),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: Text(
+                        _selectedCustomer?.name ?? 'Umum (Klik untuk cari)',
+                        style: TextStyle(
+                          color: _selectedCustomer == null
+                              ? Colors.grey
+                              : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ),
+
                   const SizedBox(height: 20),
+
+                  // Pay Button
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       minimumSize: const Size.fromHeight(50),
                     ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      // Next: save to DB!
+                    onPressed: () async {
+                      try {
+                        // Prepare Data
+                        final cartList = _cart.entries.map((e) {
+                          return {
+                            'product': _cartProducts[e.key],
+                            'qty': e.value,
+                          };
+                        }).toList();
+
+                        // Call Service
+                        final txn = await _transactionService.createTransaction(
+                          totalAmount: _totalPrice,
+                          paymentMethod: 'cash', // Logic can be extended later
+                          staffId: _selectedStaff?.id,
+                          customerId: _selectedCustomer?.id,
+                          cartItems: cartList,
+                        );
+
+                        if (txn != null) {
+                          if (mounted) {
+                            Navigator.pop(context); // Close sheet
+                            setState(() {
+                              _cart.clear();
+                              _cartProducts.clear();
+                              _selectedCustomer = null;
+                              // _selectedStaff = null; // Maybe keep staff selected?
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Transaksi Berhasil! Status: Preparing',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          throw Exception("Gagal membuat transaksi");
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     },
                     child: const Text(
                       "Proses Pembayaran",
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                 ],
@@ -353,6 +503,147 @@ class _PosViewState extends State<PosView> {
           },
         );
       },
+    );
+  }
+
+  Future<Customer?> _showCustomerSearchDialog() {
+    return showDialog<Customer>(
+      context: context,
+      builder: (context) {
+        return const _CustomerSearchDialog();
+      },
+    );
+  }
+}
+
+class _CustomerSearchDialog extends StatefulWidget {
+  const _CustomerSearchDialog();
+
+  @override
+  State<_CustomerSearchDialog> createState() => _CustomerSearchDialogState();
+}
+
+class _CustomerSearchDialogState extends State<_CustomerSearchDialog> {
+  final CustomerService _customerService = CustomerService();
+  List<Customer> _results = [];
+  String _query = '';
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _search();
+  }
+
+  void _search() async {
+    final list = await _customerService.getCustomers(query: _query);
+    setState(() => _results = list);
+  }
+
+  void _createCustomer() async {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Tambah Pelanggan Baru"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: "Nama"),
+              ),
+              TextField(
+                controller: phoneCtrl,
+                decoration: const InputDecoration(labelText: "No HP"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.isNotEmpty) {
+                  final newC = Customer(
+                    name: nameCtrl.text,
+                    phone: phoneCtrl.text,
+                  );
+                  await _customerService.createCustomer(newC);
+                  Navigator.pop(context);
+                  _search(); // refresh list
+                }
+              },
+              child: const Text("Simpan"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Pilih Pelanggan"),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchCtrl,
+                    decoration: const InputDecoration(
+                      hintText: "Cari nama / hp...",
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (v) {
+                      _query = v;
+                      _search();
+                    },
+                  ),
+                ),
+                IconButton(
+                  onPressed: _createCustomer,
+                  icon: const Icon(Icons.person_add, color: Colors.blue),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Flexible(
+              child: SizedBox(
+                height: 300,
+                child: ListView.builder(
+                  itemCount: _results.length,
+                  itemBuilder: (context, index) {
+                    final c = _results[index];
+                    return ListTile(
+                      leading: const CircleAvatar(child: Icon(Icons.person)),
+                      title: Text(c.name),
+                      subtitle: Text(c.phone ?? '-'),
+                      onTap: () => Navigator.pop(context, c),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Batal"),
+        ),
+      ],
     );
   }
 }
