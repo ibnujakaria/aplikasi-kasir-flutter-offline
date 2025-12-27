@@ -27,7 +27,7 @@ class TransactionService {
           'staff_id': staffId,
           'customer_id': customerId,
           'status': TransactionStatus.preparing.toMap(),
-          // created_at is default
+          'created_at': DateTime.now().toIso8601String(),
         });
 
         // 2. Insert Items & Update Stock
@@ -154,7 +154,7 @@ class TransactionService {
       '''
       SELECT SUM(total_amount) as total 
       FROM ${TransactionTable.tableName} 
-      WHERE created_at BETWEEN ? AND ? 
+      WHERE created_at >= ? AND created_at <= ? 
       AND status != ?
     ''',
       [startOfDay, endOfDay, TransactionStatus.cancelled.toMap()],
@@ -168,7 +168,7 @@ class TransactionService {
       '''
       SELECT COUNT(*) as count 
       FROM ${TransactionTable.tableName} 
-      WHERE created_at BETWEEN ? AND ?
+      WHERE created_at >= ? AND created_at <= ?
     ''',
       [startOfDay, endOfDay],
     );
