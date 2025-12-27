@@ -1,7 +1,7 @@
 import 'package:aplikasi_kasir/modules/product/product_list.view.dart';
 import 'package:aplikasi_kasir/modules/transaction/history_list.view.dart';
 import 'package:flutter/material.dart';
-import 'home/home.view.dart';
+import '../dashboard/dashboard.view.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,7 +15,7 @@ class _MainScreenState extends State<MainScreen> {
 
   // List of screens to display
   final List<Widget> _pages = [
-    const HomeView(),
+    const DashboardView(),
     const HistoryListView(),
     const ProductListView(),
   ];
@@ -39,12 +39,12 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Dasbor',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long_outlined),
             activeIcon: Icon(Icons.receipt_long),
-            label: 'History',
+            label: 'Transaksi',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.inventory_2_outlined),

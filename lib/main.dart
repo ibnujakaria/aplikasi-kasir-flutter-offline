@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'modules/main_screen.dart';
+import 'modules/layout/main_screen.view.dart';
 import 'core/database/database.service.dart';
 
 void main() async {

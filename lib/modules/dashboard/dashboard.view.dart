@@ -3,14 +3,14 @@ import '../product/product.service.dart';
 import '../product/models/product.model.dart';
 import '../product/widgets/product_card.widget.dart';
 
-class HomeView extends StatefulWidget {
-  const HomeView({super.key});
+class DashboardView extends StatefulWidget {
+  const DashboardView({super.key});
 
   @override
-  State<HomeView> createState() => _HomeViewState();
+  State<DashboardView> createState() => _DashboardViewState();
 }
 
-class _HomeViewState extends State<HomeView> {
+class _DashboardViewState extends State<DashboardView> {
   final ProductService _productService = ProductService();
 
   @override
