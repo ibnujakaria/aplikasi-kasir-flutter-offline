@@ -92,32 +92,48 @@ class TransactionService {
   }) async {
     final db = await _databaseService.database;
 
-    // Build Query
     String whereClause = '';
     List<dynamic> args = [];
 
     // Filter by Status
     if (status != null) {
-      whereClause += 'status = ?';
+      whereClause += 't.status = ?';
       args.add(status.toMap());
     }
 
-    // Filter by Search Query (ID or Payment Method for now, maybe customer name if we joined)
+    // Filter by Search Query
     if (query != null && query.isNotEmpty) {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
-      // Simple search by ID or payment method
-      whereClause += '(id LIKE ? OR payment_method LIKE ?)';
+      // Search by ID, Payment Method, or Customer Name
+      whereClause +=
+          '(t.id LIKE ? OR t.payment_method LIKE ? OR c.name LIKE ?)';
+      args.add('%$query%');
       args.add('%$query%');
       args.add('%$query%');
     }
 
-    final maps = await db.query(
-      TransactionTable.tableName,
-      where: whereClause.isEmpty ? null : whereClause,
-      whereArgs: args.isEmpty ? null : args,
-      orderBy: orderBy,
-    );
+    // Perform JOIN
+    final sql =
+        '''
+      SELECT t.*, c.name as customer_name
+      FROM ${TransactionTable.tableName} t
+      LEFT JOIN customer c ON t.customer_id = c.id
+      ${whereClause.isNotEmpty ? 'WHERE $whereClause' : ''}
+      ORDER BY t.$orderBy
+    ''';
+
+    final maps = await db.rawQuery(sql, args);
 
     return List.generate(maps.length, (i) => Transaction.fromMap(maps[i]));
+  }
+
+  Future<void> updateTransactionStatus(int id, TransactionStatus status) async {
+    final db = await _databaseService.database;
+    await db.update(
+      TransactionTable.tableName,
+      {'status': status.toMap()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

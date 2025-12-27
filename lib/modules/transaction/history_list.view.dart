@@ -5,6 +5,7 @@ import 'package:aplikasi_kasir/core/utils/currency_format.dart';
 import 'models/transaction.model.dart';
 import 'transaction.service.dart';
 import 'pos.view.dart';
+import '../product/product_detail.view.dart';
 
 class HistoryListView extends StatefulWidget {
   const HistoryListView({super.key});
@@ -245,7 +246,6 @@ class _HistoryListViewState extends State<HistoryListView> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
-          // Show detail dialog or navigate
           _showDetailDialog(txn);
         },
         borderRadius: BorderRadius.circular(12),
@@ -301,13 +301,13 @@ class _HistoryListViewState extends State<HistoryListView> {
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                   if (txn.customerId != null)
-                    // Ideally we show customer Name, but we only have ID in this context. Use placeholder or fetch.
                     Row(
                       children: [
                         const Icon(Icons.person, size: 14, color: Colors.grey),
                         const SizedBox(width: 4),
+                        // Show Name if available, otherwise ID
                         Text(
-                          "Cust #${txn.customerId}",
+                          txn.customerName ?? "Cust #${txn.customerId}",
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
@@ -327,66 +327,220 @@ class _HistoryListViewState extends State<HistoryListView> {
   void _showDetailDialog(Transaction txn) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // Allow full height for better UX
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Center(
-                child: Text(
-                  "Detail Transaksi",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const Divider(),
+        return StatefulBuilder(
+          // Use StatefulBuilder to handle status change within the sheet if needed
+          builder: (context, setSheetState) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.6,
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              expand: false,
+              builder: (context, scrollController) {
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const Center(
+                        child: Text(
+                          "Detail Transaksi",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const Divider(),
 
-              // Detail Info
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Total: ${formatCurrency(txn.totalAmount)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                      // Customer Info
+                      if (txn.customerId != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person, color: Colors.blue),
+                              const SizedBox(width: 8),
+                              Text(
+                                txn.customerName ??
+                                    "Customer #${txn.customerId}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Transaction Info
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Total: ${formatCurrency(txn.totalAmount)}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          _buildStatusDropdown(txn, (newStatus) async {
+                            // Logic to update status
+                            if (newStatus != null && newStatus != txn.status) {
+                              await _transactionService.updateTransactionStatus(
+                                txn.id!,
+                                newStatus,
+                              );
+                              Navigator.pop(context); // Close sheet
+                              _loadTransactions(); // Refresh list
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Status berhasil diperbarui!"),
+                                ),
+                              );
+                            }
+                          }),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        "Items:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+
+                      Expanded(
+                        child: FutureBuilder<List<Map<String, dynamic>>>(
+                          future: _fetchItemsWithNames(txn.id!),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData)
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            if (snapshot.data!.isEmpty)
+                              return const Text("Tidak ada item");
+
+                            return ListView(
+                              controller: scrollController,
+                              children: snapshot.data!.map((item) {
+                                final name =
+                                    item['product_name'] ?? 'Unknown Product';
+                                final qty = item['quantity'];
+                                final price = item['price'];
+                                final productId = item['product_id'];
+
+                                return Card(
+                                  elevation: 0,
+                                  color: Colors.grey[50], // Subtle background
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  child: ListTile(
+                                    // dense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 4,
+                                    ),
+                                    title: Text(
+                                      name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      "$qty x ${formatCurrency(price)}",
+                                    ),
+                                    trailing: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 14,
+                                      color: Colors.grey,
+                                    ),
+                                    onTap: () {
+                                      if (productId != null) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ProductDetailView(
+                                                  productId: productId,
+                                                ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  Text("Status: ${txn.status.name}"),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              FutureBuilder<List<Map<String, dynamic>>>(
-                future: _fetchItemsWithNames(txn.id!),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData)
-                    return const Center(child: CircularProgressIndicator());
-                  if (snapshot.data!.isEmpty)
-                    return const Text("Tidak ada item");
-
-                  return SizedBox(
-                    height: 200,
-                    child: ListView(
-                      children: snapshot.data!.map((item) {
-                        final name = item['product_name'] ?? 'Unknown Product';
-                        final qty = item['quantity'];
-                        final price = item['price'];
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(name),
-                          trailing: Text("$qty x ${formatCurrency(price)}"),
-                        );
-                      }).toList(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+                );
+              },
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildStatusDropdown(
+    Transaction txn,
+    Function(TransactionStatus?) onChanged,
+  ) {
+    Color statusColor = Colors.grey;
+    switch (txn.status) {
+      case TransactionStatus.preparing:
+        statusColor = Colors.orange;
+        break;
+      case TransactionStatus.served:
+        statusColor = Colors.blue;
+        break;
+      case TransactionStatus.finished:
+        statusColor = Colors.green;
+        break;
+      case TransactionStatus.cancelled:
+        statusColor = Colors.red;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColor.withOpacity(0.5)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<TransactionStatus>(
+          value: txn.status,
+          icon: Icon(Icons.arrow_drop_down, color: statusColor),
+          isDense: true,
+          style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+          items: TransactionStatus.values.map((s) {
+            return DropdownMenuItem(
+              value: s,
+              child: Text(s.name.toUpperCase()),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ),
     );
   }
 
