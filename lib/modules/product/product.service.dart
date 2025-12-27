@@ -140,4 +140,34 @@ class ProductService {
 
     return Product.fromMap(maps.first, images: images);
   }
+
+  Future<void> deleteProduct(int id) async {
+    final db = await _dbService.database;
+
+    // 1. Check if product is used in any transaction
+    final List<Map<String, dynamic>> transactionItems = await db.query(
+      'transaction_items',
+      where: 'product_id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+
+    if (transactionItems.isNotEmpty) {
+      throw Exception(
+        'Produk tidak dapat dihapus karena sudah memiliki riwayat transaksi.',
+      );
+    }
+
+    await db.transaction((txn) async {
+      // 2. Delete Child Images first
+      await txn.delete(
+        'product_image',
+        where: 'product_id = ?',
+        whereArgs: [id],
+      );
+
+      // 3. Delete Product
+      await txn.delete('product', where: 'id = ?', whereArgs: [id]);
+    });
+  }
 }

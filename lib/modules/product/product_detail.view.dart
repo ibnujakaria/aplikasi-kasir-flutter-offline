@@ -140,16 +140,25 @@ class _ProductDetailViewState extends State<ProductDetailView> {
                       child: IconButton(
                         icon: const Icon(Icons.edit, color: Colors.white),
                         onPressed: () async {
-                          // Wait for the result from the Form Page
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (c) => ProductFormView(product: product),
                             ),
                           );
-                          // When user comes back, RE-READ the database
                           _refreshProduct();
                         },
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black.withOpacity(0.4),
+                      child: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.redAccent),
+                        onPressed: () =>
+                            _confirmDeleteProduct(context, product),
                       ),
                     ),
                   ),
@@ -250,6 +259,48 @@ class _ProductDetailViewState extends State<ProductDetailView> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _confirmDeleteProduct(BuildContext context, Product product) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Produk?'),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus "${product.name}"? Produk tidak dapat dihapus jika pernah ditransaksikan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _service.deleteProduct(product.id!);
+                if (mounted) {
+                  Navigator.pop(context); // Go back to list
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Produk berhasil dihapus')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

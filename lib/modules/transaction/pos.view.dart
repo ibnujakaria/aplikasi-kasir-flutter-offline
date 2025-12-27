@@ -20,7 +20,7 @@ class _PosViewState extends State<PosView> {
   final ProductService _productService = ProductService();
   final TransactionService _transactionService = TransactionService();
   final StaffService _staffService = StaffService();
-  final CustomerService _customerService = CustomerService();
+  // final CustomerService _customerService = CustomerService(); // Removed unused
 
   // State for Cart
   final Map<int, int> _cart = {}; // {productId: quantity}

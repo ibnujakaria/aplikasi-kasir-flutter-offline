@@ -136,6 +136,25 @@ class TransactionService {
     );
   }
 
+  Future<void> deleteTransaction(int id) async {
+    final db = await _databaseService.database;
+    await db.transaction((txn) async {
+      // 1. Delete Items (Cascade usually handles this if configured, but manual is safer for logic)
+      await txn.delete(
+        TransactionItemTable.tableName,
+        where: 'transaction_id = ?',
+        whereArgs: [id],
+      );
+
+      // 2. Delete Transaction
+      await txn.delete(
+        TransactionTable.tableName,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+  }
+
   Future<Map<String, dynamic>> getDashboardStats() async {
     final db = await _databaseService.database;
     final now = DateTime.now();

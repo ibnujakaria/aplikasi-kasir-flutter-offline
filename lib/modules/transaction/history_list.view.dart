@@ -357,14 +357,36 @@ class _HistoryListViewState extends State<HistoryListView> {
                           ),
                         ),
                       ),
-                      const Center(
-                        child: Text(
-                          "Detail Transaksi",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                      // Header Row: Title & Delete Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Detail Transaksi",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
+                          Row(
+                            children: [
+                              IconButton(
+                                tooltip: "Hapus Transaksi",
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  _confirmDelete(context, txn.id!);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                       const Divider(),
 
@@ -557,6 +579,36 @@ class _HistoryListViewState extends State<HistoryListView> {
         WHERE ti.transaction_id = ?
      ''',
       [transactionId],
+    );
+  }
+
+  void _confirmDelete(BuildContext context, int transactionId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Transaksi?'),
+        content: const Text(
+          'Transaksi ini akan dihapus permanen. Stok produk tidak akan dikembalikan otomatis (fitur belum aktif). Lanjutkan?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx); // Close dialog
+              await _transactionService.deleteTransaction(transactionId);
+              Navigator.pop(context); // Close detail sheet
+              _loadTransactions(); // Refresh list
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Transaksi berhasil dihapus')),
+              );
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }
