@@ -1,3 +1,4 @@
+import 'package:aplikasi_kasir/core/utils/currency_format.dart';
 import 'package:flutter/material.dart';
 import 'models/product.model.dart';
 import 'product.service.dart';
@@ -136,7 +137,7 @@ class _ProductDetailViewState extends State<ProductDetailView> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Rp ${product.price.toInt()}',
+                          formatCurrency(product.price),
                           style: const TextStyle(
                             fontSize: 22,
                             color: Colors.orange,

@@ -1,4 +1,5 @@
 import 'package:aplikasi_kasir/modules/product/product_list.view.dart';
+import 'package:aplikasi_kasir/modules/transaction/history_list.view.dart';
 import 'package:flutter/material.dart';
 import 'home/home.view.dart';
 
@@ -15,7 +16,7 @@ class _MainScreenState extends State<MainScreen> {
   // List of screens to display
   final List<Widget> _pages = [
     const HomeView(),
-    const Center(child: Text('Riwayat Transaksi (Coming Soon)')),
+    const HistoryListView(),
     const ProductListView(),
   ];
 
