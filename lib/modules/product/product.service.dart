@@ -35,4 +35,9 @@ class ProductService {
       return Product.fromMap(map, images: images);
     }).toList();
   }
+
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    final db = await _dbService.database;
+    return await db.query('product_category');
+  }
 }

@@ -1,8 +1,7 @@
 import 'dart:io';
-import 'package:aplikasi_kasir/modules/home/home.view.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-
+import 'modules/main_screen.dart';
 import 'core/database/database.service.dart';
 
 void main() async {
@@ -33,7 +32,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Kasir Resto',
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      home: const HomeView(),
+      home: const MainScreen(),
     );
   }
 }
