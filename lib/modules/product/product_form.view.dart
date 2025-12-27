@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import 'models/product.model.dart';
 import 'models/product_image.model.dart';
 import 'product.service.dart';
@@ -57,19 +60,41 @@ class _ProductFormViewState extends State<ProductFormView> {
     setState(() => _categories = cats);
   }
 
-  // --- IMAGE HELPERS ---
+  // ... inside class ...
+
   Future<void> _pickLocalFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
     );
+
     if (result != null && result.files.single.path != null) {
+      final File pickedFile = File(result.files.single.path!);
+
+      // Get App Document Directory
+      final Directory appDocDir = await getApplicationDocumentsDirectory();
+
+      // Create a dedicated directory for products if not exists
+      final Directory productDir = Directory(
+        '${appDocDir.path}/product_images',
+      );
+      if (!await productDir.exists()) {
+        await productDir.create(recursive: true);
+      }
+
+      // Generate unique name
+      final String fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${path.basename(pickedFile.path)}';
+      final String savedPath = '${productDir.path}/$fileName';
+
+      // Copy File
+      await pickedFile.copy(savedPath);
+
       setState(() {
         _images.add(
           ProductImage(
             productId: widget.product?.id ?? 0,
-            path: result.files.single.path!,
-            isThumbnail:
-                _images.isEmpty, // Set as thumb if it's the first image
+            path: savedPath, // Use persistence path
+            isThumbnail: _images.isEmpty,
           ),
         );
       });
@@ -229,11 +254,21 @@ class _ProductFormViewState extends State<ProductFormView> {
                             height: 50,
                             fit: BoxFit.cover,
                           )
-                        : Image.asset(
-                            img.path,
+                        : Image.file(
+                            File(img.path),
                             width: 50,
                             height: 50,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/images/placeholder.png', // Fallback or handle asset if actually asset
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) =>
+                                    const Icon(Icons.broken_image),
+                              );
+                            },
                           ),
                   ),
                   title: Text(

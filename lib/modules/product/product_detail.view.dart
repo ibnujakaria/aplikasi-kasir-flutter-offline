@@ -1,5 +1,6 @@
 import 'package:aplikasi_kasir/core/utils/currency_format.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'models/product.model.dart';
 import 'product.service.dart';
 import 'product_form.view.dart';
@@ -77,7 +78,24 @@ class _ProductDetailViewState extends State<ProductDetailView> {
                               tag: 'product-${product.id}',
                               child: path.startsWith('http')
                                   ? Image.network(path, fit: BoxFit.cover)
-                                  : Image.asset(path, fit: BoxFit.cover),
+                                  : Image.file(
+                                      File(path),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        // Fallback to asset if file fails (e.g. initial seed data)
+                                        return Image.asset(
+                                          path,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (c, e, s) =>
+                                              const Center(
+                                                child: Icon(
+                                                  Icons.broken_image,
+                                                  size: 50,
+                                                ),
+                                              ),
+                                        );
+                                      },
+                                    ),
                             ),
                           );
                         },

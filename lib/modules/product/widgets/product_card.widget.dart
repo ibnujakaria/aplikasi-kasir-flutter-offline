@@ -1,6 +1,7 @@
 import 'package:aplikasi_kasir/core/utils/currency_format.dart';
 import 'package:aplikasi_kasir/modules/product/product_detail.view.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../models/product.model.dart';
 
 class ProductCard extends StatelessWidget {
@@ -48,7 +49,21 @@ class ProductCard extends StatelessWidget {
                     Positioned.fill(
                       child: imageUrl.startsWith('http')
                           ? Image.network(imageUrl, fit: BoxFit.cover)
-                          : Image.asset(imageUrl, fit: BoxFit.cover),
+                          : Image.file(
+                              File(imageUrl),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (c, e, s) => const Icon(
+                                    Icons.image,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
+                            ),
                     ),
                     // Out of Stock Overlay
                     if (isOutOfStock)
