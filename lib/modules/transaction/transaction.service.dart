@@ -136,4 +136,64 @@ class TransactionService {
       whereArgs: [id],
     );
   }
+
+  Future<Map<String, dynamic>> getDashboardStats() async {
+    final db = await _databaseService.database;
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day).toIso8601String();
+    final endOfDay = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      23,
+      59,
+      59,
+    ).toIso8601String();
+
+    // 1. Today's Revenue (Sum total_amount where status != cancelled)
+    final revenueResult = await db.rawQuery(
+      '''
+      SELECT SUM(total_amount) as total 
+      FROM ${TransactionTable.tableName} 
+      WHERE created_at BETWEEN ? AND ? 
+      AND status != ?
+    ''',
+      [startOfDay, endOfDay, TransactionStatus.cancelled.toMap()],
+    );
+
+    final double todayRevenue =
+        (revenueResult.first['total'] as num?)?.toDouble() ?? 0.0;
+
+    // 2. Today's Transactions Count
+    final countResult = await db.rawQuery(
+      '''
+      SELECT COUNT(*) as count 
+      FROM ${TransactionTable.tableName} 
+      WHERE created_at BETWEEN ? AND ?
+    ''',
+      [startOfDay, endOfDay],
+    );
+
+    final int todayCount = (countResult.first['count'] as int?) ?? 0;
+
+    // 3. Recent Transactions (Limit 5)
+    final recentMaps = await db.rawQuery('''
+      SELECT t.*, c.name as customer_name
+      FROM ${TransactionTable.tableName} t
+      LEFT JOIN customer c ON t.customer_id = c.id
+      ORDER BY t.created_at DESC
+      LIMIT 5
+    ''');
+
+    final recentTransactions = List.generate(
+      recentMaps.length,
+      (i) => Transaction.fromMap(recentMaps[i]),
+    );
+
+    return {
+      'today_revenue': todayRevenue,
+      'today_count': todayCount,
+      'recent_transactions': recentTransactions,
+    };
+  }
 }
