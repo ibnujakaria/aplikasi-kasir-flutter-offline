@@ -2,6 +2,7 @@ import 'package:aplikasi_kasir/modules/product/product_list.view.dart';
 import 'package:aplikasi_kasir/modules/transaction/history_list.view.dart';
 import 'package:flutter/material.dart';
 import '../dashboard/dashboard.view.dart';
+import '../staff/staff_list.view.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,6 +19,7 @@ class _MainScreenState extends State<MainScreen> {
     const DashboardView(),
     const HistoryListView(),
     const ProductListView(),
+    const StaffListView(),
   ];
 
   void _onItemTapped(int index) {
@@ -35,6 +37,8 @@ class _MainScreenState extends State<MainScreen> {
         onTap: _onItemTapped,
         selectedItemColor: Colors.orange,
         unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType
+            .fixed, // Ensure consistent look with 4 items
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -50,6 +54,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.inventory_2_outlined),
             activeIcon: Icon(Icons.inventory_2),
             label: 'Produk',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
+            label: 'Staf',
           ),
         ],
       ),

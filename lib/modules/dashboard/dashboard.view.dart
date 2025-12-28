@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../transaction/transaction.service.dart';
 import '../transaction/pos.view.dart';
 import '../transaction/history_list.view.dart';
+import '../staff/staff_list.view.dart'; // Import StaffListView
+// import '../product/product_list.view.dart'; // Not used yet
 import '../../core/utils/currency_format.dart';
 import '../transaction/models/transaction.model.dart';
 
@@ -117,6 +119,22 @@ class _DashboardViewState extends State<DashboardView> {
                               ),
                             );
                             _loadStats();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildActionButton(
+                          label: "Kelola Staf",
+                          icon: Icons.people,
+                          color: Colors.teal,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const StaffListView(),
+                              ),
+                            );
                           },
                         ),
                       ),

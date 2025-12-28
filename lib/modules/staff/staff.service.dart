@@ -20,6 +20,12 @@ class StaffService {
     }
   }
 
+  // Delete staff
+  Future<int> deleteStaff(int id) async {
+    final db = await _dbService.database;
+    return await db.delete(_table, where: 'id = ?', whereArgs: [id]);
+  }
+
   // Get all staff members
   Future<List<Staff>> getAllStaff() async {
     final db = await _dbService.database;
