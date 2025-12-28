@@ -19,7 +19,8 @@ class Transaction {
   final String? paymentMethod;
   final int? staffId;
   final int? customerId;
-  final String? customerName; // New transient field
+  final String? customerName; // Transient field from JOIN
+  final String? staffName; // Transient field from JOIN
   final TransactionStatus status;
   final DateTime? createdAt;
   final List<TransactionItem>? items;
@@ -31,6 +32,7 @@ class Transaction {
     this.staffId,
     this.customerId,
     this.customerName,
+    this.staffName,
     this.status = TransactionStatus.preparing,
     this.createdAt,
     this.items,
@@ -44,6 +46,7 @@ class Transaction {
       staffId: json['staff_id'],
       customerId: json['customer_id'],
       customerName: json['customer_name'],
+      staffName: json['staff_name'],
       status: TransactionStatus.fromMap(json['status'] ?? 'preparing'),
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])

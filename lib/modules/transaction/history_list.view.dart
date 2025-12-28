@@ -410,6 +410,25 @@ class _HistoryListViewState extends State<HistoryListView> {
                           ),
                         ),
 
+                      // Staff Info
+                      if (txn.staffId != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.badge, color: Colors.green),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Staff: ${txn.staffName ?? "Staff #${txn.staffId}"}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
                       // Transaction Info
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,

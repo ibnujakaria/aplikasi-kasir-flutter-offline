@@ -111,12 +111,13 @@ class TransactionService {
       args.add('%$query%');
     }
 
-    // Perform JOIN
+    // Perform JOIN with customer and staff tables
     final sql =
         '''
-      SELECT t.*, c.name as customer_name
+      SELECT t.*, c.name as customer_name, s.name as staff_name
       FROM ${TransactionTable.tableName} t
       LEFT JOIN customer c ON t.customer_id = c.id
+      LEFT JOIN staff s ON t.staff_id = s.id
       ${whereClause.isNotEmpty ? 'WHERE $whereClause' : ''}
       ORDER BY t.$orderBy
     ''';
